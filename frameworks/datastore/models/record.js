@@ -235,13 +235,11 @@ SC.Record = SC.Object.extend(
     records destroyed in the store as well as changing the isDestroyed 
     property on the record to YES.  If this is a new record, this will avoid 
     creating the record in the first place.
-    
-    @param {Function} callback that will be called when the destroy completes (optional)
-    
+        
     @returns {SC.Record} receiver
   */
-  destroy: function(callback) { 
-    this.get('store').destroyRecord(null, null, this.get('storeKey'), callback);
+  destroy: function() { 
+    this.get('store').destroyRecord(null, null, this.get('storeKey'));
     this.notifyPropertyChange('status');
 
     // If there are any aggregate records, we might need to propagate our new
