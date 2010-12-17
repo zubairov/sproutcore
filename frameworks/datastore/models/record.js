@@ -221,10 +221,12 @@ SC.Record = SC.Object.extend(
     record data from the server.  If the record is new and exists only in 
     memory then this call will have no effect.
     
+    @param {Function} callback that will be called when the refresh completes (optional)
+    
     @returns {SC.Record} receiver
   */
-  refresh: function() { 
-    this.get('store').refreshRecord(null, null, this.get('storeKey'));
+  refresh: function(callback) { 
+    this.get('store').refreshRecord(null, null, this.get('storeKey'), callback);
     return this ;
   },
   
@@ -234,10 +236,12 @@ SC.Record = SC.Object.extend(
     property on the record to YES.  If this is a new record, this will avoid 
     creating the record in the first place.
     
+    @param {Function} callback that will be called when the destroy completes (optional)
+    
     @returns {SC.Record} receiver
   */
-  destroy: function() { 
-    this.get('store').destroyRecord(null, null, this.get('storeKey'));
+  destroy: function(callback) { 
+    this.get('store').destroyRecord(null, null, this.get('storeKey'), callback);
     this.notifyPropertyChange('status');
 
     // If there are any aggregate records, we might need to propagate our new
@@ -591,11 +595,13 @@ SC.Record = SC.Object.extend(
     
     @param {Hash} params optional additonal params that will passed down
       to the data source
+    @param {Function} callback that will be called when the commit completes (optional)
+      
     @returns {SC.Record} receiver
   */
-  commitRecord: function(params) {
+  commitRecord: function(params, callback) {
     var store = this.get('store');
-    store.commitRecord(undefined, undefined, this.get('storeKey'), params);
+    store.commitRecord(undefined, undefined, this.get('storeKey'), params, callback);
     return this ;
   },
   
