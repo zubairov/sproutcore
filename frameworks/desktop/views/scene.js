@@ -32,7 +32,6 @@
 SC.SceneView = SC.ContainerView.extend(
 /** @scope SC.SceneView.prototype */ {
 
-
   // ..........................................................
   // Properties
   // 
@@ -66,9 +65,9 @@ SC.SceneView = SC.ContainerView.extend(
     Speed of transition.  Should be expressed in msec.
     
     @property {Number}
-    @default 200
+    @default 300
   */
-  transitionDuration: 200,
+  transitionDuration: 300,
   
   /**
     The ease to use on the transition.
@@ -144,31 +143,31 @@ SC.SceneView = SC.ContainerView.extend(
         scenes = this.get('scenes'),
         inIdx = scenes ? scenes.indexOf(this.get('nowShowing')) : -1,
         info = {duration: this.get('transitionDuration') / 1000, timing: this.get('transitionTiming')},
-        layout = SC.clone(this.get('frame')),
+        oldContentFrame = oldContent ? oldContent.get('frame') : null,
+        frame = SC.clone(this.get('frame')),
         that = this, left;
     
-    if (outIdx < 0 || inIdx < 0 || outIdx === inIdx || !newContent) {
+    if (outIdx < 0 || inIdx < 0 || outIdx === inIdx || !newContent || !oldContent) {
       return this._replaceScene(newContent, YES);
     }
     
-    delete layout.x;
-    delete layout.y;
+    delete frame.x;
+    delete frame.y;
+    delete oldContentFrame.x;
+    delete oldContentFrame.y;
     
-    oldContent.adjust(layout);
+    // we want widths/heights set on the view before animating left
+    oldContent.adjust(oldContentFrame);
     
     if (inIdx < outIdx) {
-      left = layout.width;
-      
-      layout = SC.clone(layout);
-      layout.left = -layout.width;
+      left = oldContentFrame.width;
+      frame.left = -frame.width;
     } else {
-      left = -layout.width;
-      
-      layout = SC.clone(layout);
-      layout.left = layout.width;
+      left = -oldContentFrame.width;
+      frame.left = frame.width;
     }
     
-    newContent.adjust(layout);
+    newContent.adjust(frame);
     
     this.appendChild(newContent);
     
@@ -176,10 +175,10 @@ SC.SceneView = SC.ContainerView.extend(
     this._targetIndex = inIdx;
     
     oldContent.invokeLater('animate', 1, 'left', left, info, function() {
-      that.removeChild(oldContent);
+      if (oldContent.get('parentView') === that) that.removeChild(oldContent);
     });
     
-    newContent.invokeLater('animate', 1, 'left', 0, SC.clone(info), function() {
+    newContent.invokeLater('animate', 1, 'left', 0, info, function() {
       that._replaceScene(newContent, NO);
     });
   }
