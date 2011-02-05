@@ -169,6 +169,11 @@ SC.View.reopen(
     - minHeight: a minimum height
     - maxWidth: a maximum width
     - maxHeight: a maximum height
+    - border: border on all sides
+    - borderTop: top border
+    - borderRight: right border
+    - borderBottom: bottom border
+    - borderLeft: bottom left
 
     Note that you can only use certain combinations to set layout.  For
     example, you may set left/right or left/width, but not left/width/right,
@@ -304,6 +309,20 @@ SC.View.reopen(
     return this.computeFrameWithParentFrame(null) ;
   }.property('useStaticLayout').cacheable(),    // We depend on the layout, but layoutDidChange will call viewDidChange to check the frame for us
 
+  _adjustForBorder: function(frame, layout){
+    var borderTop = ((layout.borderTop !== undefined) ? layout.borderTop : layout.border) || 0,
+        borderLeft = ((layout.borderLeft !== undefined) ? layout.borderLeft : layout.border) || 0,
+        borderBottom = ((layout.borderBottom !== undefined) ? layout.borderBottom : layout.border) || 0,
+        borderRight = ((layout.borderRight !== undefined) ? layout.borderRight : layout.border) || 0;
+
+    frame.x += borderLeft; // The border on the left pushes the frame to the right
+    frame.y += borderTop; // The border on the top pushes the frame down
+    frame.width -= (borderLeft + borderRight); // Border takes up space
+    frame.height -= (borderTop + borderBottom); // Border takes up space
+
+    return frame;
+  },
+
   /**
     Computes what the frame of this view would be if the parent were resized
     to the passed dimensions.  You can use this method to project the size of
@@ -325,7 +344,6 @@ SC.View.reopen(
         stLayout = this.get('useStaticLayout'),
         pv = this.get('parentView'),
         dH, dW, //shortHand for parentDimensions
-        borderTop, borderLeft,
         lR = layout.right,
         lL = layout.left,
         lT = layout.top,
@@ -357,10 +375,12 @@ SC.View.reopen(
 
         /*
           TODO Can probably have some better width/height values - CC
-          FIXME This will probably not work right with borders - PW
         */
         f.width = layer.offsetWidth;
         f.height = layer.offsetHeight;
+
+        f = this._adjustForBorder(f, layout);
+
         return f;
       }
       return null; // can't compute
@@ -480,15 +500,7 @@ SC.View.reopen(
       if (f.width === AUTO) f.width = layer ? layer.clientWidth : 0;
     }
 
-    // views with SC.Border mixin applied applied
-    if (this.get('hasBorder')) {
-      borderTop = this.get('borderTop') || 0;
-      borderLeft = this.get('borderLeft') || 0;
-      f.height -= borderTop+ (this.get('borderBottom') || 0);
-      f.y += borderTop;
-      f.width -= borderLeft + (this.get('borderRight') || 0);
-      f.x += borderLeft;
-    }
+    f = this._adjustForBorder(f, layout);
 
     // Account for special cases inside ScrollView, where we adjust the
     // element's scrollTop/scrollLeft property for performance reasons.
@@ -605,6 +617,26 @@ SC.View.reopen(
       }
     }
   },
+
+  /**
+    The frame of the view including the borders
+  */
+  borderFrame: function(){
+    var layout = this.get('layout'),
+        frame = this.get('frame'),
+        defaultBorder = layout.border,
+        topBorder = ((layout.topBorder !== undefined) ? layout.topBorder : layout.border) || 0,
+        rightBorder = ((layout.rightBorder !== undefined) ? layout.rightBorder : layout.border) || 0,
+        bottomBorder = ((layout.bottomBorder !== undefined) ? layout.bottomBorder : layout.border) || 0,
+        leftBorder = ((layout.leftBorder !== undefined) ? layout.leftBorder : layout.border) || 0;
+
+    return {
+      x: frame.x - leftBorder,
+      y: frame.y - topBorder,
+      width: frame.width + leftBorder + rightBorder,
+      height: frame.height + topBorder + bottomBorder
+    };
+  }.property('frame').cacheable(),
 
   /**
     This method may be called on your view whenever the parent view resizes.
