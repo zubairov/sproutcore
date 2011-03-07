@@ -245,7 +245,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
   
     @property {SC.Set}
   */
-  changelog: null,
+  changelog: SC.Set.create(),
   
   /**
     An array of SC.Error objects associated with individual records in the
@@ -657,7 +657,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
 
     // also reset temporary objects and errors
     this.chainedChanges = this.locks = this.editables = null;
-    this.changelog = null ;
+    this.changelog.clear();
     this.recordErrors = null;
     this.queryErrors = null;
 
@@ -729,12 +729,9 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     }
     
     // add any records to the changelog for commit handling
-    var myChangelog = this.changelog, chChangelog = nestedStore.changelog;
-    if (chChangelog) {
-      if (!myChangelog) myChangelog = this.changelog = SC.CoreSet.create();
-      myChangelog.addEach(chChangelog);
+    if (chChangelog && chChangelog.get(length) > 0) {
+    	this.changelog.addEach(chChangelog);
     }  
-    this.changelog = myChangelog;
     
     // immediately flush changes to notify records - nested stores will flush
     // later on.
@@ -1126,10 +1123,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     this.dataHashDidChange(storeKey);
     
     // Record is now in a committable state -- add storeKey to changelog
-    changelog = this.changelog;
-    if (!changelog) changelog = SC.Set.create();
-    changelog.add(storeKey);
-    this.changelog = changelog;
+    this.changelog.add(storeKey);
     
     // if commit records is enabled
     if(this.get('commitRecordsAutomatically')){
@@ -1299,11 +1293,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     this.dataHashDidChange(storeKey);
 
     // add/remove change log
-    changelog = this.changelog;
-    if (!changelog) changelog = this.changelog = SC.Set.create();
-
     ((status & K.DIRTY) ? changelog.add(storeKey) : changelog.remove(storeKey));
-    this.changelog=changelog;
 
     // if commit records is enabled
     if(this.get('commitRecordsAutomatically')){
@@ -1455,10 +1445,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     this.dataHashDidChange(storeKey, null, statusOnly, key);
     
     // record in changelog
-    changelog = this.changelog ;
-    if (!changelog) changelog = this.changelog = SC.Set.create() ;
-    changelog.add(storeKey);
-    this.changelog = changelog;
+    this.changelog.add(storeKey);
     
     // if commit records is enabled
     if(this.get('commitRecordsAutomatically')){
@@ -1753,7 +1740,7 @@ SC.Store = SC.Object.extend( /** @scope SC.Store.prototype */ {
     //remove all commited changes from changelog
     if (ret && !recordTypes && !ids) {
       if (storeKeys === this.changelog) {
-        this.changelog = null;
+        this.changelog.clear();
       }
       else {
         this.changelog.removeEach(storeKeys);

@@ -198,6 +198,7 @@ SC.Set = SC.mixin({},
   clear: function() {
     if (this.isFrozen) throw SC.FROZEN_ERROR;
     this.length = 0;
+    if (this.isObservable) this.enumerableContentDidChange();
     return this ;
   },
 
